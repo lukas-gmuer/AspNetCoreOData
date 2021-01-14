@@ -16,12 +16,15 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.OData.Abstracts;
 using Microsoft.AspNetCore.OData.Common;
 using Microsoft.AspNetCore.OData.Edm;
 using Microsoft.AspNetCore.OData.Extensions;
 using Microsoft.AspNetCore.OData.Formatter;
 using Microsoft.AspNetCore.OData.Results;
 using Microsoft.AspNetCore.OData.Routing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
@@ -151,6 +154,16 @@ namespace Microsoft.AspNetCore.OData.Query
                 queryContext = new ODataQueryContext(
                     edmModel,
                     elementType);
+
+                IODataFeature odataFeature = request.ODataFeature();
+                odataFeature.PrefixName = odataFeature.PrefixName ?? string.Empty;
+
+                IOptions<ODataOptions> odataOptionsOptions = request.HttpContext.RequestServices.GetRequiredService<IOptions<ODataOptions>>();
+                var options = odataOptionsOptions.Value;
+                if (!options.Models.ContainsKey(odataFeature.PrefixName) )
+                {
+                    options.AddModel(odataFeature.PrefixName, edmModel);
+                }
             }
 
             // Create and validate the query options.
